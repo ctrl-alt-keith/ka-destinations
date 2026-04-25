@@ -22,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Publish bundle output to a destination.",
         description="Placeholder publish command for future destination integrations.",
     )
+    publish_parser.add_argument("bundle", help="Path to the bundle file to publish.")
+    publish_parser.add_argument(
+        "--title",
+        help="Optional destination title override.",
+    )
     publish_parser.set_defaults(command="publish")
 
     return parser
@@ -33,7 +38,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     if args.command == "publish":
-        print("Publish is not implemented yet.")
+        title_suffix = f" (title: {args.title})" if args.title else ""
+        print(f"Publish is not implemented yet for {args.bundle}{title_suffix}.")
         return 0
 
     parser.print_help()
