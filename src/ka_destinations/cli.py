@@ -4,6 +4,18 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+from pathlib import Path
+
+from ka_destinations import gdocs
+
+
+def _read_utf8_text(path: Path) -> str:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    if not path.is_file():
+        raise IsADirectoryError(path)
+
+    return path.read_text(encoding="utf-8")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,12 +32,18 @@ def build_parser() -> argparse.ArgumentParser:
     publish_parser = subparsers.add_parser(
         "publish",
         help="Publish bundle output to a destination.",
-        description="Placeholder publish command for future destination integrations.",
+        description="Publish a local bundle markdown file to Google Docs.",
     )
     publish_parser.add_argument("bundle", help="Path to the bundle file to publish.")
     publish_parser.add_argument(
         "--title",
-        help="Optional destination title override.",
+        required=True,
+        help="Google Doc title.",
+    )
+    publish_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate the input and print what would be published without calling Google APIs.",
     )
     publish_parser.set_defaults(command="publish")
 
@@ -38,8 +56,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     if args.command == "publish":
-        title_suffix = f" (title: {args.title})" if args.title else ""
-        print(f"Publish is not implemented yet for {args.bundle}{title_suffix}.")
+        bundle_path = Path(args.bundle)
+        try:
+            content = _read_utf8_text(bundle_path)
+        except FileNotFoundError:
+            parser.error(f"input file does not exist: {bundle_path}")
+        except IsADirectoryError:
+            parser.error(f"input path is not a file: {bundle_path}")
+        except UnicodeDecodeError:
+            parser.error(f"input file is not valid UTF-8 text: {bundle_path}")
+
+        if args.dry_run:
+            print(
+                "Dry run: would publish "
+                f"{bundle_path} ({len(content)} characters) to Google Docs "
+                f'with title "{args.title}".'
+            )
+            return 0
+
+        url = gdocs.publish_markdown(content=content, title=args.title)
+        print(url)
         return 0
 
     parser.print_help()
