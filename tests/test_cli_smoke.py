@@ -39,7 +39,18 @@ def test_top_level_help() -> None:
 
 
 def test_publish_placeholder_runs() -> None:
-    result = run_cli("publish")
+    result = run_cli("publish", "bundle.md", "--title", "Example")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "Publish is not implemented yet."
+    assert (
+        result.stdout.strip()
+        == "Publish is not implemented yet for bundle.md (title: Example)."
+    )
+
+
+def test_publish_help_lists_required_args() -> None:
+    result = run_cli("publish", "--help")
+
+    assert result.returncode == 0
+    assert "bundle" in result.stdout
+    assert "--title" in result.stdout
