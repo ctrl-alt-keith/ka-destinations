@@ -21,7 +21,4 @@
 
 ## Destination Boundary
 
-- Keep publishing behavior explicit and scoped.
-- Avoid expanding destination capabilities such as updates, sharing, or
-  permissions unless the task requires it.
-- Prefer opt-in flags for behavior that broadens publish scope.
+- See playbook guidance for destination-boundary constraints.
