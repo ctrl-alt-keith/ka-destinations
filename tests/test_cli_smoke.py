@@ -50,6 +50,7 @@ def test_publish_help_lists_required_args() -> None:
     assert "bundle" in result.stdout
     assert "--title" in result.stdout
     assert "--dry-run" in result.stdout
+    assert "--folder-id" in result.stdout
 
 
 def test_publish_requires_title(tmp_path: Path) -> None:
@@ -96,6 +97,32 @@ def test_publish_dry_run_does_not_call_google_api(
     publish.assert_not_called()
 
 
+def test_publish_dry_run_reports_folder_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    publish = Mock()
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(
+        [
+            "publish",
+            str(bundle),
+            "--title",
+            "Example",
+            "--folder-id",
+            "folder-123",
+            "--dry-run",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert 'with title "Example" in Google Drive folder "folder-123".' in captured.out
+    publish.assert_not_called()
+
+
 def test_publish_calls_google_api_with_bundle_content(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -108,16 +135,46 @@ def test_publish_calls_google_api_with_bundle_content(
 
     captured = capsys.readouterr()
     assert result == 0
-    publish.assert_called_once_with(content="# Bundle\n\nHello.\n", title="Example")
+    publish.assert_called_once_with(
+        content="# Bundle\n\nHello.\n",
+        title="Example",
+        folder_id=None,
+    )
+    assert captured.out.strip() == "https://docs.google.com/document/d/doc-id/edit"
+
+
+def test_publish_calls_google_api_with_folder_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    publish = Mock(return_value="https://docs.google.com/document/d/doc-id/edit")
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(
+        ["publish", str(bundle), "--title", "Example", "--folder-id", "folder-123"]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    publish.assert_called_once_with(
+        content="# Bundle\n\nHello.\n",
+        title="Example",
+        folder_id="folder-123",
+    )
     assert captured.out.strip() == "https://docs.google.com/document/d/doc-id/edit"
 
 
 def test_gdocs_publish_uses_docs_api_service() -> None:
-    service = Mock()
-    documents = service.documents.return_value
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
     documents.create.return_value.execute.return_value = {"documentId": "doc-id"}
 
-    url = gdocs.publish_markdown(content="# Bundle\n", title="Example", service=service)
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="Example",
+        docs_service=docs_service,
+    )
 
     assert url == "https://docs.google.com/document/d/doc-id/edit"
     documents.create.assert_called_once_with(body={"title": "Example"})
@@ -134,3 +191,80 @@ def test_gdocs_publish_uses_docs_api_service() -> None:
             ]
         },
     )
+
+
+def test_gdocs_publish_creates_document_in_folder() -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+    documents = docs_service.documents.return_value
+    drive_service.files.return_value.create.return_value.execute.return_value = {"id": "doc-id"}
+
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="Example",
+        folder_id="folder-123",
+        docs_service=docs_service,
+        drive_service=drive_service,
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    drive_service.files.return_value.create.assert_called_once_with(
+        body={
+            "name": "Example",
+            "mimeType": "application/vnd.google-apps.document",
+            "parents": ["folder-123"],
+        },
+        fields="id",
+    )
+    documents.create.assert_not_called()
+    documents.batchUpdate.assert_called_once_with(
+        documentId="doc-id",
+        body={
+            "requests": [
+                {
+                    "insertText": {
+                        "location": {"index": 1},
+                        "text": "# Bundle\n",
+                    }
+                }
+            ]
+        },
+    )
+
+
+def test_build_google_credentials_uses_docs_scope_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_scopes: list[list[str]] = []
+
+    def fake_default(*, scopes: list[str]) -> tuple[object, None]:
+        captured_scopes.append(scopes)
+        return object(), None
+
+    import google.auth
+
+    monkeypatch.setattr(google.auth, "default", fake_default)
+
+    gdocs._build_google_credentials(include_drive=False)
+
+    assert captured_scopes == [[gdocs.GOOGLE_DOCS_SCOPE]]
+
+
+def test_build_google_credentials_adds_drive_scope_when_needed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_scopes: list[list[str]] = []
+
+    def fake_default(*, scopes: list[str]) -> tuple[object, None]:
+        captured_scopes.append(scopes)
+        return object(), None
+
+    import google.auth
+
+    monkeypatch.setattr(google.auth, "default", fake_default)
+
+    gdocs._build_google_credentials(include_drive=True)
+
+    assert captured_scopes == [
+        [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE]
+    ]
