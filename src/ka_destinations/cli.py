@@ -45,6 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Validate the input and print what would be published without calling Google APIs.",
     )
+    publish_parser.add_argument(
+        "--folder-id",
+        help="Optional Google Drive folder ID for the newly created Google Doc.",
+    )
     publish_parser.set_defaults(command="publish")
 
     return parser
@@ -67,14 +71,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(f"input file is not valid UTF-8 text: {bundle_path}")
 
         if args.dry_run:
-            print(
+            message = (
                 "Dry run: would publish "
                 f"{bundle_path} ({len(content)} characters) to Google Docs "
-                f'with title "{args.title}".'
+                f'with title "{args.title}"'
             )
+            if args.folder_id:
+                message += f' in Google Drive folder "{args.folder_id}".'
+            else:
+                message += "."
+            print(message)
             return 0
 
-        url = gdocs.publish_markdown(content=content, title=args.title)
+        url = gdocs.publish_markdown(
+            content=content,
+            title=args.title,
+            folder_id=args.folder_id,
+        )
         print(url)
         return 0
 
