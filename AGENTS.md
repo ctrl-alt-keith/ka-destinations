@@ -9,8 +9,15 @@
 - This repository is part of a multi-repo workspace. Changes must be scoped to
   this repository only. Do not stage or commit files from other repositories;
   open separate PRs per repository.
-- This file defines repo-local execution rules; reusable workflow rules belong
-  in `ai-workflow-playbook`.
+
+This repository follows the shared workflow defined in the
+`ai-workflow-playbook` repository.
+
+- Engineering baseline: `ai-workflow-playbook/docs/engineering-baseline.md`
+- Workflow rules: `ai-workflow-playbook/docs/`
+
+Use the playbook for general workflow rules. Follow this AGENTS.md for
+repo-specific behavior when they differ.
 
 ## Completion
 
