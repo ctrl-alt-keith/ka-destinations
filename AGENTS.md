@@ -6,6 +6,9 @@
 - `make check` is the canonical validation entrypoint.
 - Do not open or update a pull request if validation fails.
 - Keep pull requests small, scoped, and easy to review.
+- This repository is part of a multi-repo workspace. Changes must be scoped to
+  this repository only. Do not stage or commit files from other repositories;
+  open separate PRs per repository.
 - This file defines repo-local execution rules; reusable workflow rules belong
   in `ai-workflow-playbook`.
 
