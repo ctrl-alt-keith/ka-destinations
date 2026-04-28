@@ -7,7 +7,14 @@
 - Do not open or update a pull request if validation fails.
 - Keep pull requests small, scoped, and easy to review.
 - This file defines repo-local execution rules; reusable workflow rules belong
-  in the playbook.
+  in `ai-workflow-playbook`.
+
+## Completion
+
+- For repo changes, do not treat local edits or passing `make check` alone as
+  done.
+- The task is complete only after the change is committed, pushed, and opened
+  as a pull request targeting `main`.
 
 ## PR Readiness
 
