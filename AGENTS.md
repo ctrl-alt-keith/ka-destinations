@@ -26,6 +26,10 @@ for repo-specific behavior.
 ## Pull Requests
 
 - Target `main`.
+- Include a clear summary.
+- Include validation or testing notes.
+- Include risks or follow-up notes when relevant.
+- Add `Closes #[issue number]` for issue-driven work.
 - Open pull requests ready for review by default.
 - Draft pull requests are not part of the normal workflow for this repository.
   Use a draft only when explicitly requested or when the work is incomplete and
@@ -34,5 +38,7 @@ for repo-specific behavior.
 ## Destination Boundary
 
 - `knowledge-adapters` handles acquisition and normalization.
-- `ka-destinations` handles the final publish step.
-- See playbook guidance for destination-boundary constraints.
+- `ka-destinations` handles final publish behavior.
+- Keep publish behavior explicit and scoped.
+- Do not add update, sharing, permission, or lifecycle-management behavior
+  unless the task explicitly requires it.
