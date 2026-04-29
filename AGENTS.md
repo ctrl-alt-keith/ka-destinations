@@ -17,6 +17,11 @@ for repo-specific behavior.
 - Do not commit generated `build/` artifacts unless the task explicitly
   requires it.
 
+## Branches
+
+- Use `feat/`, `fix/`, `docs/`, or `chore/` prefixes.
+- Avoid `codex/` for normal work.
+
 ## Validation
 
 - Run `make check` before opening or updating a pull request.
