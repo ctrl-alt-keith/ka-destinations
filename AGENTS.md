@@ -14,6 +14,8 @@ for repo-specific behavior.
 
 - Put implementation code under `src/ka_destinations/`.
 - Put tests under `tests/`.
+- Do not commit generated `build/` artifacts unless the task explicitly
+  requires it.
 
 ## Validation
 
@@ -24,9 +26,10 @@ for repo-specific behavior.
 ## Pull Requests
 
 - Target `main`.
-- Follow the playbook default for pull request readiness: ready for review by
-  default, and draft only when explicitly requested or when the work is
-  incomplete.
+- Open pull requests ready for review by default.
+- Draft pull requests are not part of the normal workflow for this repository.
+  Use a draft only when explicitly requested or when the work is incomplete and
+  early feedback is the goal.
 
 ## Destination Boundary
 
