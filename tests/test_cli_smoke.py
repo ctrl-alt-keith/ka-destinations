@@ -70,6 +70,13 @@ def test_publish_missing_input_file() -> None:
     assert "input file does not exist: missing.md" in result.stderr
 
 
+def test_publish_rejects_directory_input(tmp_path: Path) -> None:
+    result = run_cli("publish", str(tmp_path), "--title", "Example", "--dry-run")
+
+    assert result.returncode == 2
+    assert f"input path is not a file: {tmp_path}" in result.stderr
+
+
 def test_publish_rejects_non_utf8_file(tmp_path: Path) -> None:
     bundle = tmp_path / "bundle.md"
     bundle.write_bytes(b"\xff\xfe\x00")
@@ -191,6 +198,22 @@ def test_gdocs_publish_uses_docs_api_service() -> None:
             ]
         },
     )
+
+
+def test_gdocs_publish_empty_content_skips_batch_update() -> None:
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
+    documents.create.return_value.execute.return_value = {"documentId": "doc-id"}
+
+    url = gdocs.publish_markdown(
+        content="",
+        title="Example",
+        docs_service=docs_service,
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    documents.create.assert_called_once_with(body={"title": "Example"})
+    documents.batchUpdate.assert_not_called()
 
 
 def test_gdocs_publish_creates_document_in_folder() -> None:
