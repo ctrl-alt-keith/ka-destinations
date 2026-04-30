@@ -31,15 +31,9 @@ for repo-specific behavior.
 
 ## Pull Requests
 
-- Target `main`.
-- Include a clear summary.
-- Include validation or testing notes.
-- Include risks or follow-up notes when relevant.
-- Add `Closes #[issue number]` for issue-driven work.
-- Open pull requests ready for review by default.
-- Draft pull requests are not part of the normal workflow for this repository.
-  Use a draft only when explicitly requested or when the work is incomplete and
-  early feedback is the goal.
+- For shared PR lifecycle behavior, use `ai-workflow-playbook/docs/start-here.md`
+  and the referenced workflow docs.
+- In this repository, target `main` and include validation or testing notes.
 
 ## Destination Boundary
 

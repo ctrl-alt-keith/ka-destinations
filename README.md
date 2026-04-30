@@ -47,10 +47,6 @@ Common setup options:
 The publish flow requests the Google Docs scope:
 `https://www.googleapis.com/auth/documents`.
 
-## Branches
-
-See `AGENTS.md` for contributor workflow and branch policy.
-
 ## Scope Limits
 
 `knowledge-adapters` handles acquisition and normalization. `ka-destinations`
