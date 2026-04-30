@@ -49,8 +49,7 @@ The publish flow requests the Google Docs scope:
 
 ## Branches
 
-Use `feat/`, `fix/`, `docs/`, or `chore/` prefixes. Avoid `codex/` for normal
-work.
+See `AGENTS.md` for contributor workflow and branch policy.
 
 ## Scope Limits
 
