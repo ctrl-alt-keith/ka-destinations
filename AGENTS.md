@@ -27,6 +27,7 @@ for repo-specific behavior.
 
 - Run `make check` before opening or updating a pull request.
 - `make check` is the canonical validation entrypoint.
+- `make check` runs `make lint`, `make typecheck`, and `make test`.
 - Do not open or update a pull request if validation fails.
 
 ## Pull Requests
