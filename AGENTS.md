@@ -32,9 +32,12 @@ for repo-specific behavior.
 ## Validation
 
 - Run `make check` before opening or updating a pull request.
-- `make check` is the canonical validation entrypoint.
+- `make check` is the canonical local blocking validation entrypoint.
 - `make check` runs `make lint`, `make typecheck`, and `make test`.
 - Do not open or update a pull request if validation fails.
+- Live Google Docs or Drive publishing and credentialed Google validation are
+  outside normal local PR validation unless explicitly requested and reported
+  separately.
 
 ## Pull Requests
 
