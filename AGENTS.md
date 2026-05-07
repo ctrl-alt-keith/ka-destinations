@@ -21,7 +21,7 @@ for repo-specific behavior.
 ## Local Execution
 
 - Run commands from this repository working directory by default.
-- Keep temporary workflow state repo-local, including `.worktrees/`.
+- Keep temporary workflow state repo-local, for example `.worktrees/`.
 - Prefer direct `gh ...` commands unless shell behavior is required.
 
 ## Branches
