@@ -18,6 +18,12 @@ for repo-specific behavior.
 - Do not commit generated `build/` artifacts unless the task explicitly
   requires it.
 
+## Local Execution
+
+- Run commands from this repository working directory by default.
+- Keep temporary workflow state repo-local, for example `.worktrees/`.
+- Prefer direct `gh ...` commands unless shell behavior is required.
+
 ## Branches
 
 - Use `feat/`, `fix/`, `docs/`, or `chore/` prefixes.
