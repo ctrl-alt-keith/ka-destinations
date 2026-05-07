@@ -62,3 +62,5 @@ markdown as readable plain text. It intentionally does not include:
 - Gemini-specific behavior
 - watch mode
 - background sync
+
+> AI-generated. Human-verified. Occasionally argued about.
