@@ -1,5 +1,7 @@
 .PHONY: help dev lint typecheck test check clean
 
+.DEFAULT_GOAL := dev
+
 VENV = .venv
 PYTHON = $(VENV)/bin/python
 PIP = $(VENV)/bin/pip
