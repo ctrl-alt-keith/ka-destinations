@@ -26,6 +26,12 @@ Publish a local `knowledge-adapters` bundle markdown file into a new Google Doc:
 ka-destinations publish bundle.md --title "Example"
 ```
 
+To create the document in a specific Google Drive folder, pass its folder ID:
+
+```bash
+ka-destinations publish bundle.md --title "Example" --folder-id "folder-123"
+```
+
 For a local validation pass that does not call Google APIs:
 
 ```bash
@@ -47,6 +53,9 @@ Common setup options:
 The publish flow requests the Google Docs scope:
 `https://www.googleapis.com/auth/documents`.
 
+When `--folder-id` is used, it also requests the Google Drive file scope:
+`https://www.googleapis.com/auth/drive.file`.
+
 ## Scope Limits
 
 `knowledge-adapters` handles acquisition and normalization. `ka-destinations`
@@ -57,7 +66,6 @@ markdown as readable plain text. It intentionally does not include:
 
 - bidirectional sync
 - document updates or patching
-- folder selection
 - sharing or permissions management
 - Gemini-specific behavior
 - watch mode
