@@ -48,6 +48,20 @@ def test_publish_help_lists_required_args() -> None:
     assert "--folder-id" in result.stdout
 
 
+def test_publish_dry_run_reports_publish_target(tmp_path: Path) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+
+    result = run_cli("publish", str(bundle), "--title", "Example", "--dry-run")
+
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout == (
+        f'Dry run: would publish {bundle} (17 characters) to Google Docs '
+        'with title "Example".\n'
+    )
+
+
 def test_publish_requires_title(tmp_path: Path) -> None:
     bundle = tmp_path / "bundle.md"
     bundle.write_text("# Bundle\n", encoding="utf-8")
