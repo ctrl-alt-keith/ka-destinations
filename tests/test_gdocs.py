@@ -92,6 +92,89 @@ def test_gdocs_publish_creates_document_in_folder() -> None:
     )
 
 
+def test_gdocs_publish_builds_docs_service_without_drive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    credentials = object()
+    credential_requests: list[bool] = []
+    docs_credentials: list[object | None] = []
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
+    documents.create.return_value.execute.return_value = {"documentId": "doc-id"}
+    build_drive_service = Mock()
+
+    def fake_build_google_credentials(*, include_drive: bool) -> object:
+        credential_requests.append(include_drive)
+        return credentials
+
+    def fake_build_docs_service(*, credentials: object | None = None) -> Mock:
+        docs_credentials.append(credentials)
+        return docs_service
+
+    monkeypatch.setattr(gdocs, "_build_google_credentials", fake_build_google_credentials)
+    monkeypatch.setattr(gdocs, "_build_docs_service", fake_build_docs_service)
+    monkeypatch.setattr(gdocs, "_build_drive_service", build_drive_service)
+
+    url = gdocs.publish_markdown(content="# Bundle\n", title="Example")
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    assert credential_requests == [False]
+    assert docs_credentials == [credentials]
+    build_drive_service.assert_not_called()
+    documents.create.assert_called_once_with(body={"title": "Example"})
+    documents.batchUpdate.assert_called_once()
+
+
+def test_gdocs_publish_builds_drive_service_for_folder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    credentials = object()
+    credential_requests: list[bool] = []
+    docs_credentials: list[object | None] = []
+    drive_credentials: list[object | None] = []
+    docs_service = Mock()
+    drive_service = Mock()
+    documents = docs_service.documents.return_value
+    drive_service.files.return_value.create.return_value.execute.return_value = {"id": "doc-id"}
+
+    def fake_build_google_credentials(*, include_drive: bool) -> object:
+        credential_requests.append(include_drive)
+        return credentials
+
+    def fake_build_docs_service(*, credentials: object | None = None) -> Mock:
+        docs_credentials.append(credentials)
+        return docs_service
+
+    def fake_build_drive_service(*, credentials: object | None = None) -> Mock:
+        drive_credentials.append(credentials)
+        return drive_service
+
+    monkeypatch.setattr(gdocs, "_build_google_credentials", fake_build_google_credentials)
+    monkeypatch.setattr(gdocs, "_build_docs_service", fake_build_docs_service)
+    monkeypatch.setattr(gdocs, "_build_drive_service", fake_build_drive_service)
+
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="Example",
+        folder_id="folder-123",
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    assert credential_requests == [True]
+    assert docs_credentials == [credentials]
+    assert drive_credentials == [credentials]
+    drive_service.files.return_value.create.assert_called_once_with(
+        body={
+            "name": "Example",
+            "mimeType": "application/vnd.google-apps.document",
+            "parents": ["folder-123"],
+        },
+        fields="id",
+    )
+    documents.create.assert_not_called()
+    documents.batchUpdate.assert_called_once()
+
+
 def test_build_google_credentials_uses_docs_scope_only(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
