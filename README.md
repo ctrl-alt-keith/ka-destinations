@@ -62,7 +62,7 @@ When `--folder-id` is used, it also requests the Google Drive file scope:
 handles the final publish step.
 
 For contributor-facing product boundaries, see
-[`PRODUCT_BOUNDARY.md`](PRODUCT_BOUNDARY.md).
+[`docs/product-boundary.md`](docs/product-boundary.md).
 
 The initial Google Docs flow only creates a new document and inserts the bundle
 markdown as readable plain text. It intentionally does not include:

@@ -41,9 +41,11 @@ content should be managed after publication.
 
 The primary product object is a publication event.
 
-A publication event records or performs the explicit act of publishing an
-approved bundle to a destination. It is not an editorial review, an acquisition
-record, a retained knowledge object, or an analytical finding.
+A publication event records or performs the explicit act of publishing a
+caller-supplied bundle to a destination. It is not an editorial review, an
+acquisition record, a retained knowledge object, or an analytical finding.
+Review, approval, and retention decisions happen upstream; `ka-destinations`
+does not determine whether the bundle was approved.
 
 ## Repository Boundaries
 
@@ -56,7 +58,7 @@ record, a retained knowledge object, or an analytical finding.
 
 Publication means:
 
-- intentionally delivering an approved bundle
+- intentionally delivering a caller-supplied bundle
 - destination-specific behavior
 - destination-specific receipts
 
