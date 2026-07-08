@@ -61,6 +61,9 @@ When `--folder-id` is used, it also requests the Google Drive file scope:
 `knowledge-adapters` handles acquisition and normalization. `ka-destinations`
 handles the final publish step.
 
+For contributor-facing product boundaries, see
+[`PRODUCT_BOUNDARY.md`](PRODUCT_BOUNDARY.md).
+
 The initial Google Docs flow only creates a new document and inserts the bundle
 markdown as readable plain text. It intentionally does not include:
 
