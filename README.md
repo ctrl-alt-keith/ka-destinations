@@ -38,6 +38,16 @@ For a local validation pass that does not call Google APIs:
 ka-destinations publish bundle.md --title "Example" --dry-run
 ```
 
+For automation-friendly publication receipts, request JSON output:
+
+```bash
+ka-destinations publish bundle.md --title "Example" --dry-run --output-format json
+```
+
+The JSON receipt includes the destination, title, input path, character count,
+folder ID when provided, dry-run status, and published document URL when a live
+publish succeeds.
+
 ## Google Auth
 
 `ka-destinations` uses Google Application Default Credentials through
