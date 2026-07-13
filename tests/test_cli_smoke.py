@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -46,6 +47,7 @@ def test_publish_help_lists_required_args() -> None:
     assert "--title" in result.stdout
     assert "--dry-run" in result.stdout
     assert "--folder-id" in result.stdout
+    assert "--output-format" in result.stdout
 
 
 def test_publish_dry_run_reports_publish_target(tmp_path: Path) -> None:
@@ -60,6 +62,35 @@ def test_publish_dry_run_reports_publish_target(tmp_path: Path) -> None:
         f'Dry run: would publish {bundle} (17 characters) to Google Docs '
         'with title "Example".\n'
     )
+
+
+def test_publish_dry_run_can_emit_json_receipt(tmp_path: Path) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+
+    result = run_cli(
+        "publish",
+        str(bundle),
+        "--title",
+        "Example",
+        "--folder-id",
+        "folder-123",
+        "--dry-run",
+        "--output-format",
+        "json",
+    )
+
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert json.loads(result.stdout) == {
+        "bundle_path": str(bundle),
+        "character_count": 17,
+        "destination": "google_docs",
+        "document_url": None,
+        "dry_run": True,
+        "folder_id": "folder-123",
+        "title": "Example",
+    }
 
 
 def test_publish_requires_title(tmp_path: Path) -> None:

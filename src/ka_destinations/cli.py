@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -16,6 +17,30 @@ def _read_utf8_text(path: Path) -> str:
         raise IsADirectoryError(path)
 
     return path.read_text(encoding="utf-8")
+
+
+def _publication_receipt(
+    *,
+    bundle_path: Path,
+    character_count: int,
+    title: str,
+    folder_id: str | None,
+    dry_run: bool,
+    document_url: str | None,
+) -> dict[str, object]:
+    return {
+        "bundle_path": str(bundle_path),
+        "character_count": character_count,
+        "destination": "google_docs",
+        "document_url": document_url,
+        "dry_run": dry_run,
+        "folder_id": folder_id,
+        "title": title,
+    }
+
+
+def _print_json_receipt(receipt: dict[str, object]) -> None:
+    print(json.dumps(receipt, sort_keys=True))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,6 +74,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--folder-id",
         help="Optional Google Drive folder ID for the newly created Google Doc.",
     )
+    publish_parser.add_argument(
+        "--output-format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format for the publication receipt.",
+    )
     publish_parser.set_defaults(command="publish")
 
     return parser
@@ -71,6 +102,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(f"input file is not valid UTF-8 text: {bundle_path}")
 
         if args.dry_run:
+            receipt = _publication_receipt(
+                bundle_path=bundle_path,
+                character_count=len(content),
+                title=args.title,
+                folder_id=args.folder_id,
+                dry_run=True,
+                document_url=None,
+            )
+            if args.output_format == "json":
+                _print_json_receipt(receipt)
+                return 0
+
             message = (
                 "Dry run: would publish "
                 f"{bundle_path} ({len(content)} characters) to Google Docs "
@@ -88,6 +131,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             title=args.title,
             folder_id=args.folder_id,
         )
+        if args.output_format == "json":
+            _print_json_receipt(
+                _publication_receipt(
+                    bundle_path=bundle_path,
+                    character_count=len(content),
+                    title=args.title,
+                    folder_id=args.folder_id,
+                    dry_run=False,
+                    document_url=url,
+                )
+            )
+            return 0
+
         print(url)
         return 0
 
