@@ -35,6 +35,7 @@ def test_gdocs_publish_uses_docs_api_service() -> None:
             ]
         },
     )
+    documents.batchUpdate.return_value.execute.assert_called_once_with()
 
 
 def test_gdocs_publish_empty_content_skips_batch_update() -> None:
@@ -90,6 +91,7 @@ def test_gdocs_publish_creates_document_in_folder() -> None:
             ]
         },
     )
+    documents.batchUpdate.return_value.execute.assert_called_once_with()
 
 
 def test_gdocs_publish_builds_docs_service_without_drive(
