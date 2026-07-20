@@ -19,6 +19,18 @@ def _read_utf8_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _non_empty_value(
+    parser: argparse.ArgumentParser, *, label: str, value: str | None
+) -> str | None:
+    if value is None:
+        return None
+
+    normalized = value.strip()
+    if not normalized:
+        parser.error(f"{label} must not be blank")
+    return normalized
+
+
 def _publication_receipt(
     *,
     bundle_path: Path,
@@ -91,6 +103,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     if args.command == "publish":
+        args.title = _non_empty_value(parser, label="--title", value=args.title)
+        args.folder_id = _non_empty_value(parser, label="--folder-id", value=args.folder_id)
         bundle_path = Path(args.bundle)
         try:
             content = _read_utf8_text(bundle_path)

@@ -167,3 +167,32 @@ def test_publish_calls_google_api_with_folder_id(
         folder_id="folder-123",
     )
     assert captured.out.strip() == "https://docs.google.com/document/d/doc-id/edit"
+
+
+def test_publish_trims_non_empty_title_and_folder_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    publish = Mock(return_value="https://docs.google.com/document/d/doc-id/edit")
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(
+        [
+            "publish",
+            str(bundle),
+            "--title",
+            "  Example  ",
+            "--folder-id",
+            "  folder-123  ",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    publish.assert_called_once_with(
+        content="# Bundle\n\nHello.\n",
+        title="Example",
+        folder_id="folder-123",
+    )
+    assert captured.out.strip() == "https://docs.google.com/document/d/doc-id/edit"

@@ -32,6 +32,8 @@ To create the document in a specific Google Drive folder, pass its folder ID:
 ka-destinations publish bundle.md --title "Example" --folder-id "folder-123"
 ```
 
+Blank titles and blank folder IDs are rejected before any Google API call.
+
 For a local validation pass that does not call Google APIs:
 
 ```bash

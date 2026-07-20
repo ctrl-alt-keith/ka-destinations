@@ -103,6 +103,34 @@ def test_publish_requires_title(tmp_path: Path) -> None:
     assert "the following arguments are required: --title" in result.stderr
 
 
+def test_publish_rejects_blank_title(tmp_path: Path) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+
+    result = run_cli("publish", str(bundle), "--title", "   ", "--dry-run")
+
+    assert result.returncode == 2
+    assert "--title must not be blank" in result.stderr
+
+
+def test_publish_rejects_blank_folder_id(tmp_path: Path) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+
+    result = run_cli(
+        "publish",
+        str(bundle),
+        "--title",
+        "Example",
+        "--folder-id",
+        "   ",
+        "--dry-run",
+    )
+
+    assert result.returncode == 2
+    assert "--folder-id must not be blank" in result.stderr
+
+
 def test_publish_missing_input_file() -> None:
     result = run_cli("publish", "missing.md", "--title", "Example", "--dry-run")
 
