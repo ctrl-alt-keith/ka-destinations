@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from unittest.mock import Mock
 
 import pytest
@@ -213,3 +214,31 @@ def test_build_google_credentials_adds_drive_scope_when_needed(
     assert captured_scopes == [
         [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE]
     ]
+
+
+def test_build_google_credentials_reports_missing_google_auth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(sys.modules, "google.auth", None)
+
+    with pytest.raises(
+        RuntimeError,
+        match="Google API dependencies are not installed",
+    ) as error:
+        gdocs._build_google_credentials(include_drive=False)
+
+    assert isinstance(error.value.__cause__, ImportError)
+
+
+def test_google_api_build_reports_missing_google_api_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(sys.modules, "googleapiclient.discovery", None)
+
+    with pytest.raises(
+        RuntimeError,
+        match="Google API dependencies are not installed",
+    ) as error:
+        gdocs._google_api_build()
+
+    assert isinstance(error.value.__cause__, ImportError)
