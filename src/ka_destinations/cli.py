@@ -92,8 +92,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format for the publication receipt.",
     )
-    publish_parser.set_defaults(command="publish")
-
     return parser
 
 
