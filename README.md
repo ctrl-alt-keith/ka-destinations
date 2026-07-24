@@ -1,7 +1,14 @@
 # ka-destinations
 
-Minimal destination-layer CLI tools for taking `knowledge-adapters` output and
-publishing it into downstream destinations.
+Minimal destination-layer CLI tools that currently implement
+destination-specific publishing behavior for the Publication Product
+Candidate.
+
+Publication owns the authorized external-delivery transaction and
+publication-receipt semantics. An authorized publication authorizer supplies
+the consequential authorization. The CLI and destination drivers perform the
+runtime work, and this repository currently implements that behavior and emits
+the resulting receipts.
 
 ## Install
 
@@ -20,7 +27,7 @@ make check
 
 ## Usage
 
-Publish a local `knowledge-adapters` bundle markdown file into a new Google Doc:
+Publish a caller-supplied local bundle markdown file into a new Google Doc:
 
 ```bash
 ka-destinations publish bundle.md --title "Example"
@@ -48,7 +55,9 @@ ka-destinations publish bundle.md --title "Example" --dry-run --output-format js
 
 The JSON receipt includes the destination, title, input path, character count,
 folder ID when provided, dry-run status, and published document URL when a live
-publish succeeds.
+publish succeeds. The receipt is runtime evidence of the requested or performed
+operation; it is not publication authorization, editorial approval, or proof
+that the caller-supplied artifact should be retained.
 
 ## Google Auth
 
@@ -70,8 +79,15 @@ When `--folder-id` is used, it also requests the Google Drive file scope:
 
 ## Scope Limits
 
-`knowledge-adapters` handles acquisition and normalization. `ka-destinations`
-handles the final publish step.
+The Source Acquisition Product Candidate owns acquisition semantics, and
+`knowledge-adapters` currently implements acquisition and normalization.
+Publication owns the authorized external-delivery transaction, while
+`ka-destinations` currently implements the destination-specific publish step.
+
+The caller supplies the artifact to publish and is responsible for selecting
+the exact artifact covered by the publication authorization. This repository
+does not acquire the artifact, make an editorial or retention decision, or
+create publication authorization from successful validation or execution.
 
 For contributor-facing product boundaries, see
 [`docs/product-boundary.md`](docs/product-boundary.md).

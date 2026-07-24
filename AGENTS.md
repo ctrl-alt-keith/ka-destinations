@@ -67,8 +67,20 @@ for repo-specific behavior.
 
 ## Destination Boundary
 
-- `knowledge-adapters` handles acquisition and normalization.
-- `ka-destinations` handles final publish behavior.
+- The Publication Product Candidate owns the authorized external-delivery
+  transaction and publication-receipt semantics.
+- An authorized publication authorizer supplies the consequential
+  authorization for external delivery.
+- `ka-destinations` currently implements destination-specific publish behavior
+  and emits publication receipts.
+- Destination drivers are runtime components: they perform external delivery
+  and return observed destination results without acquiring Product or human
+  decision authority.
+- The Source Acquisition Product Candidate owns acquisition semantics;
+  `knowledge-adapters` currently implements acquisition and normalization.
+- The caller supplies the artifact covered by the publication authorization.
+  This repository does not establish editorial approval, retention, or
+  publication authorization merely by accepting or publishing that artifact.
 - Keep publish behavior explicit and scoped.
 - Do not add update, sharing, permission, or lifecycle-management behavior
   unless the task explicitly requires it.
