@@ -118,9 +118,10 @@ contract or architecture change.
 
 - The Source Acquisition Product Candidate owns acquisition semantics;
   `knowledge-adapters` currently implements acquisition and normalization.
-- The Knowledge Record Product Candidate owns the editorial-retention authority
-  boundary; its current implementation and evidence live outside this
-  repository.
+- The Knowledge Record Enduring Product owns the editorial-retention authority
+  boundary. Human Product Promotion Decision #1 records its promotion,
+  effective 2026-07-24. Its current implementation and evidence live outside
+  this repository.
 - Publication owns the authorized external-delivery transaction;
   `ka-destinations` currently implements destination-specific publication
   behavior and emits receipts.
