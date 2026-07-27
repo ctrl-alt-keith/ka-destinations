@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
             "into downstream tools."
         ),
     )
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     publish_parser = subparsers.add_parser(
         "publish",
