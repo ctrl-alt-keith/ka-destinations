@@ -39,6 +39,14 @@ def test_top_level_help() -> None:
     assert "publish" in result.stdout
 
 
+def test_cli_requires_a_command() -> None:
+    result = run_cli()
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "the following arguments are required: command" in result.stderr
+
+
 def test_publish_help_lists_required_args() -> None:
     result = run_cli("publish", "--help")
 
