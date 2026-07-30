@@ -159,9 +159,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(url)
         return 0
 
-    parser.print_help()
-    return 0
-
+    raise AssertionError(f"unexpected command: {args.command}")
 
 if __name__ == "__main__":
     raise SystemExit(main())
