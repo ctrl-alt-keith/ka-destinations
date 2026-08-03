@@ -55,6 +55,22 @@ def test_gdocs_publish_empty_content_skips_batch_update() -> None:
     documents.batchUpdate.assert_not_called()
 
 
+@pytest.mark.parametrize("response", [{}, {"documentId": None}, {"documentId": "  "}])
+def test_gdocs_publish_rejects_missing_document_id(response: object) -> None:
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
+    documents.create.return_value.execute.return_value = response
+
+    with pytest.raises(RuntimeError, match="did not contain a document ID"):
+        gdocs.publish_markdown(
+            content="# Bundle\n",
+            title="Example",
+            docs_service=docs_service,
+        )
+
+    documents.batchUpdate.assert_not_called()
+
+
 def test_gdocs_publish_creates_document_in_folder() -> None:
     docs_service = Mock()
     drive_service = Mock()
@@ -93,6 +109,23 @@ def test_gdocs_publish_creates_document_in_folder() -> None:
         },
     )
     documents.batchUpdate.return_value.execute.assert_called_once_with()
+
+
+def test_gdocs_publish_rejects_missing_drive_file_id() -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+    drive_service.files.return_value.create.return_value.execute.return_value = {}
+
+    with pytest.raises(RuntimeError, match="did not contain a document ID"):
+        gdocs.publish_markdown(
+            content="# Bundle\n",
+            title="Example",
+            folder_id="folder-123",
+            docs_service=docs_service,
+            drive_service=drive_service,
+        )
+
+    docs_service.documents.return_value.batchUpdate.assert_not_called()
 
 
 def test_gdocs_publish_builds_docs_service_without_drive(
