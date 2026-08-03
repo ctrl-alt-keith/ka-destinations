@@ -62,7 +62,7 @@ def _create_document(
 ) -> str:
     if folder_id is None:
         document = docs_service.documents().create(body={"title": title}).execute()
-        return str(document["documentId"])
+        return _required_document_id(document, field="documentId")
 
     if drive_service is None:
         raise ValueError("drive_service is required when folder_id is provided")
@@ -79,7 +79,17 @@ def _create_document(
         )
         .execute()
     )
-    return str(file["id"])
+    return _required_document_id(file, field="id")
+
+
+def _required_document_id(response: Any, *, field: str) -> str:
+    if not isinstance(response, dict):
+        raise RuntimeError("Google API create response did not contain a document ID")
+
+    document_id = response.get(field)
+    if not isinstance(document_id, str) or not document_id.strip():
+        raise RuntimeError("Google API create response did not contain a document ID")
+    return document_id
 
 
 def _build_google_credentials(*, include_drive: bool) -> Any:
