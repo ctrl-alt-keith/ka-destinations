@@ -119,9 +119,10 @@ contract or architecture change.
 - The Source Acquisition Product Candidate owns acquisition semantics;
   `knowledge-adapters` currently implements acquisition and normalization.
 - The Knowledge Record Enduring Product owns the editorial-retention authority
-  boundary. Human Product Promotion Decision #1 records its promotion,
-  effective 2026-07-24. Its current implementation and evidence live outside
-  this repository.
+  boundary. The canonical Playbook [Product Status](https://github.com/ctrl-alt-keith/ai-workflow-playbook/blob/main/docs/product-status.md#knowledge-record)
+  records that current accepted state. [Human Product Promotion Decision #1](https://github.com/ctrl-alt-keith/ai-workflow-playbook/blob/main/docs/product-promotion-decisions/human-product-promotion-decision-001.md)
+  preserves the promotion decision provenance, effective 2026-07-24. Its
+  current implementation and evidence live outside this repository.
 - Publication owns the authorized external-delivery transaction;
   `ka-destinations` currently implements destination-specific publication
   behavior and emits receipts.
