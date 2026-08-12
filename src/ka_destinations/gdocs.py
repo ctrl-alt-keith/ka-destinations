@@ -89,7 +89,7 @@ def _required_document_id(response: Any, *, field: str) -> str:
     document_id = response.get(field)
     if not isinstance(document_id, str) or not document_id.strip():
         raise RuntimeError("Google API create response did not contain a document ID")
-    return document_id
+    return document_id.strip()
 
 
 def _build_google_credentials(*, include_drive: bool) -> Any:

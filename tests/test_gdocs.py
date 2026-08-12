@@ -74,6 +74,33 @@ def test_gdocs_publish_rejects_missing_document_id(response: object) -> None:
     documents.batchUpdate.assert_not_called()
 
 
+def test_gdocs_publish_normalizes_document_id() -> None:
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
+    documents.create.return_value.execute.return_value = {"documentId": "  doc-id  "}
+
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="Example",
+        docs_service=docs_service,
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    documents.batchUpdate.assert_called_once_with(
+        documentId="doc-id",
+        body={
+            "requests": [
+                {
+                    "insertText": {
+                        "location": {"index": 1},
+                        "text": "# Bundle\n",
+                    }
+                }
+            ]
+        },
+    )
+
+
 def test_gdocs_publish_creates_document_in_folder() -> None:
     docs_service = Mock()
     drive_service = Mock()
