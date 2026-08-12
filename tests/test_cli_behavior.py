@@ -176,6 +176,26 @@ def test_publish_failure_does_not_emit_json_receipt(
     )
 
 
+def test_publish_failure_does_not_emit_plaintext_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    publish = Mock(side_effect=RuntimeError("destination unavailable"))
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    with pytest.raises(RuntimeError, match="destination unavailable"):
+        cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    publish.assert_called_once_with(
+        content="# Bundle\n\nHello.\n",
+        title="Example",
+        folder_id=None,
+    )
+
+
 def test_publish_calls_google_api_with_folder_id(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
