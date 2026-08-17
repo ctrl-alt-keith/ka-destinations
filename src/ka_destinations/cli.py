@@ -112,6 +112,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(f"input path is not a file: {bundle_path}")
         except UnicodeDecodeError:
             parser.error(f"input file is not valid UTF-8 text: {bundle_path}")
+        except OSError as exc:
+            parser.error(f"unable to read input file: {bundle_path}: {exc}")
 
         if args.dry_run:
             receipt = _publication_receipt(
