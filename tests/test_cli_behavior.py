@@ -196,6 +196,27 @@ def test_publish_failure_does_not_emit_plaintext_output(
     )
 
 
+def test_publish_reports_input_read_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+
+    def raise_permission_error(self: Path, *, encoding: str) -> str:
+        raise PermissionError("permission denied")
+
+    monkeypatch.setattr(Path, "read_text", raise_permission_error)
+
+    with pytest.raises(SystemExit) as error:
+        cli.main(["publish", str(bundle), "--title", "Example", "--dry-run"])
+
+    assert error.value.code == 2
+    captured = capsys.readouterr()
+    assert f"unable to read input file: {bundle}: permission denied" in captured.err
+
+
 def test_publish_calls_google_api_with_folder_id(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
