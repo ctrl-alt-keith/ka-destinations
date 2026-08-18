@@ -90,6 +90,35 @@ def test_publish_dry_run_can_emit_json_receipt(
     publish.assert_not_called()
 
 
+def test_publish_dry_run_json_receipt_uses_normalized_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    publish = Mock()
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(
+        [
+            "publish",
+            str(bundle),
+            "--title",
+            "  Example  ",
+            "--folder-id",
+            "  folder-123  ",
+            "--dry-run",
+            "--output-format",
+            "json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert json.loads(captured.out)["title"] == "Example"
+    assert json.loads(captured.out)["folder_id"] == "folder-123"
+    publish.assert_not_called()
+
+
 def test_publish_calls_google_api_with_bundle_content(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
