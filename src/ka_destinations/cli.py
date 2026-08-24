@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -140,11 +141,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(message)
             return 0
 
-        url = gdocs.publish_markdown(
-            content=content,
-            title=args.title,
-            folder_id=args.folder_id,
-        )
+        try:
+            url = gdocs.publish_markdown(
+                content=content,
+                title=args.title,
+                folder_id=args.folder_id,
+            )
+        except Exception as exc:
+            print(f"publish failed: {exc}", file=sys.stderr)
+            return 1
         if args.output_format == "json":
             _print_json_receipt(
                 _publication_receipt(
