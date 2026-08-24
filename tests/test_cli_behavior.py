@@ -184,20 +184,21 @@ def test_publish_failure_does_not_emit_json_receipt(
     publish = Mock(side_effect=RuntimeError("destination unavailable"))
     monkeypatch.setattr(gdocs, "publish_markdown", publish)
 
-    with pytest.raises(RuntimeError, match="destination unavailable"):
-        cli.main(
-            [
-                "publish",
-                str(bundle),
-                "--title",
-                "Example",
-                "--output-format",
-                "json",
-            ]
-        )
+    result = cli.main(
+        [
+            "publish",
+            str(bundle),
+            "--title",
+            "Example",
+            "--output-format",
+            "json",
+        ]
+    )
 
     captured = capsys.readouterr()
+    assert result == 1
     assert captured.out == ""
+    assert captured.err == "publish failed: destination unavailable\n"
     publish.assert_called_once_with(
         content="# Bundle\n\nHello.\n",
         title="Example",
@@ -213,11 +214,12 @@ def test_publish_failure_does_not_emit_plaintext_output(
     publish = Mock(side_effect=RuntimeError("destination unavailable"))
     monkeypatch.setattr(gdocs, "publish_markdown", publish)
 
-    with pytest.raises(RuntimeError, match="destination unavailable"):
-        cli.main(["publish", str(bundle), "--title", "Example"])
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
 
     captured = capsys.readouterr()
+    assert result == 1
     assert captured.out == ""
+    assert captured.err == "publish failed: destination unavailable\n"
     publish.assert_called_once_with(
         content="# Bundle\n\nHello.\n",
         title="Example",
