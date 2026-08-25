@@ -141,7 +141,7 @@ def test_gdocs_publish_creates_document_in_folder() -> None:
     documents.batchUpdate.return_value.execute.assert_called_once_with()
 
 
-@pytest.mark.parametrize("response", [None, [], "doc-id", {}])
+@pytest.mark.parametrize("response", [None, [], "doc-id", {}, {"id": "  "}])
 def test_gdocs_publish_rejects_missing_drive_file_id(response: object) -> None:
     docs_service = Mock()
     drive_service = Mock()
@@ -157,6 +157,38 @@ def test_gdocs_publish_rejects_missing_drive_file_id(response: object) -> None:
         )
 
     docs_service.documents.return_value.batchUpdate.assert_not_called()
+
+
+def test_gdocs_publish_normalizes_drive_file_id() -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+    documents = docs_service.documents.return_value
+    drive_service.files.return_value.create.return_value.execute.return_value = {
+        "id": "  doc-id  "
+    }
+
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="Example",
+        folder_id="folder-123",
+        docs_service=docs_service,
+        drive_service=drive_service,
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    documents.batchUpdate.assert_called_once_with(
+        documentId="doc-id",
+        body={
+            "requests": [
+                {
+                    "insertText": {
+                        "location": {"index": 1},
+                        "text": "# Bundle\n",
+                    }
+                }
+            ]
+        },
+    )
 
 
 def test_gdocs_publish_builds_docs_service_without_drive(
