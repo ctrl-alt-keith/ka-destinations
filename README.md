@@ -59,6 +59,9 @@ publish succeeds. The receipt is runtime evidence of the requested or performed
 operation; it is not publication authorization, editorial approval, or proof
 that the caller-supplied artifact should be retained.
 
+If a live publish fails, the CLI reports `publish failed: ...` on stderr,
+returns exit code 1, and does not emit a publication receipt.
+
 ## Google Auth
 
 `ka-destinations` uses Google Application Default Credentials through
