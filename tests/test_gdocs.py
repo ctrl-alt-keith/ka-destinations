@@ -10,6 +10,25 @@ import pytest
 from ka_destinations import gdocs
 
 
+@pytest.mark.parametrize("character", ["\x00", "\x08", "\x0c", "\x1f", "\ue000", "\uf8ff"])
+def test_gdocs_publish_rejects_content_docs_would_strip(character: str) -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+
+    with pytest.raises(ValueError, match="cannot preserve unsupported character"):
+        gdocs.publish_markdown(
+            content=f"before{character}after",
+            title="Example",
+            folder_id="folder-123",
+            docs_service=docs_service,
+            drive_service=drive_service,
+        )
+
+    docs_service.documents.return_value.create.assert_not_called()
+    docs_service.documents.return_value.batchUpdate.assert_not_called()
+    drive_service.files.return_value.create.assert_not_called()
+
+
 def test_gdocs_publish_uses_docs_api_service() -> None:
     docs_service = Mock()
     documents = docs_service.documents.return_value

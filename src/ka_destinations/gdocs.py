@@ -10,6 +10,19 @@ GOOGLE_DOCS_SCOPE = "https://www.googleapis.com/auth/documents"
 GOOGLE_DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
 
+def _validate_insertable_content(content: str) -> None:
+    """Reject characters the Docs API would silently remove from published text."""
+    for character in content:
+        codepoint = ord(character)
+        if (0x0000 <= codepoint <= 0x0008) or (0x000C <= codepoint <= 0x001F) or (
+            0xE000 <= codepoint <= 0xF8FF
+        ):
+            raise ValueError(
+                "Google Docs cannot preserve unsupported character "
+                f"U+{codepoint:04X} in published content"
+            )
+
+
 def publish_markdown(
     *,
     content: str,
@@ -19,6 +32,8 @@ def publish_markdown(
     drive_service: Any | None = None,
 ) -> str:
     """Create a Google Doc and write markdown content as readable plain text."""
+    _validate_insertable_content(content)
+
     credentials: Any | None = None
     if docs_service is None:
         credentials = _build_google_credentials(include_drive=folder_id is not None)
