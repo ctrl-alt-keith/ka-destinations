@@ -62,6 +62,11 @@ that the caller-supplied artifact should be retained.
 If a live publish fails, the CLI reports `publish failed: ...` on stderr,
 returns exit code 1, and does not emit a publication receipt.
 
+Before creating a Google Doc, the publisher rejects control characters and
+BMP private-use characters that Google Docs would silently remove. These
+content-preservation failures use the same stderr, exit-code, and no-receipt
+contract.
+
 ## Google Auth
 
 `ka-destinations` uses Google Application Default Credentials through
