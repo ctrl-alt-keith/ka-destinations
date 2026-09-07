@@ -23,6 +23,13 @@ def _validate_insertable_content(content: str) -> None:
             )
 
 
+def _required_non_empty(value: str, *, label: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(f"{label} must not be blank")
+    return normalized
+
+
 def publish_markdown(
     *,
     content: str,
@@ -32,6 +39,9 @@ def publish_markdown(
     drive_service: Any | None = None,
 ) -> str:
     """Create a Google Doc and write markdown content as readable plain text."""
+    title = _required_non_empty(title, label="title")
+    if folder_id is not None:
+        folder_id = _required_non_empty(folder_id, label="folder_id")
     _validate_insertable_content(content)
 
     credentials: Any | None = None
