@@ -29,6 +29,55 @@ def test_gdocs_publish_rejects_content_docs_would_strip(character: str) -> None:
     drive_service.files.return_value.create.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ("title", "folder_id", "message"),
+    [("   ", None, "title must not be blank"), ("Example", "  ", "folder_id must not be blank")],
+)
+def test_gdocs_publish_rejects_blank_destination_identifiers(
+    title: str, folder_id: str | None, message: str
+) -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+
+    with pytest.raises(ValueError, match=message):
+        gdocs.publish_markdown(
+            content="# Bundle\n",
+            title=title,
+            folder_id=folder_id,
+            docs_service=docs_service,
+            drive_service=drive_service,
+        )
+
+    docs_service.documents.return_value.create.assert_not_called()
+    drive_service.files.return_value.create.assert_not_called()
+
+
+def test_gdocs_publish_normalizes_title_and_folder_id_before_api_call() -> None:
+    docs_service = Mock()
+    drive_service = Mock()
+    documents = docs_service.documents.return_value
+    drive_service.files.return_value.create.return_value.execute.return_value = {"id": "doc-id"}
+
+    url = gdocs.publish_markdown(
+        content="# Bundle\n",
+        title="  Example  ",
+        folder_id="  folder-123  ",
+        docs_service=docs_service,
+        drive_service=drive_service,
+    )
+
+    assert url == "https://docs.google.com/document/d/doc-id/edit"
+    drive_service.files.return_value.create.assert_called_once_with(
+        body={
+            "name": "Example",
+            "mimeType": gdocs.GOOGLE_DOC_MIME_TYPE,
+            "parents": ["folder-123"],
+        },
+        fields="id",
+    )
+    documents.batchUpdate.assert_called_once()
+
+
 def test_gdocs_publish_uses_docs_api_service() -> None:
     docs_service = Mock()
     documents = docs_service.documents.return_value
