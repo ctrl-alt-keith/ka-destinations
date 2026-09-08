@@ -123,6 +123,35 @@ def test_gdocs_publish_empty_content_skips_batch_update() -> None:
     documents.batchUpdate.assert_not_called()
 
 
+def test_gdocs_publish_propagates_batch_update_failure() -> None:
+    docs_service = Mock()
+    documents = docs_service.documents.return_value
+    documents.create.return_value.execute.return_value = {"documentId": "doc-id"}
+    documents.batchUpdate.return_value.execute.side_effect = RuntimeError("Docs unavailable")
+
+    with pytest.raises(RuntimeError, match="Docs unavailable"):
+        gdocs.publish_markdown(
+            content="# Bundle\n",
+            title="Example",
+            docs_service=docs_service,
+        )
+
+    documents.create.assert_called_once_with(body={"title": "Example"})
+    documents.batchUpdate.assert_called_once_with(
+        documentId="doc-id",
+        body={
+            "requests": [
+                {
+                    "insertText": {
+                        "location": {"index": 1},
+                        "text": "# Bundle\n",
+                    }
+                }
+            ]
+        },
+    )
+
+
 @pytest.mark.parametrize(
     "response",
     [None, [], "doc-id", {}, {"documentId": None}, {"documentId": "  "}],
