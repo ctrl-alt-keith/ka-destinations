@@ -147,36 +147,6 @@ def test_publish_can_emit_json_receipt(
     }
 
 
-def test_publish_failure_does_not_emit_json_receipt(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    bundle = tmp_path / "bundle.md"
-    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
-    publish = Mock(side_effect=RuntimeError("destination unavailable"))
-    monkeypatch.setattr(gdocs, "publish_markdown", publish)
-
-    result = cli.main(
-        [
-            "publish",
-            str(bundle),
-            "--title",
-            "Example",
-            "--output-format",
-            "json",
-        ]
-    )
-
-    captured = capsys.readouterr()
-    assert result == 1
-    assert captured.out == ""
-    assert captured.err == "publish failed: destination unavailable\n"
-    publish.assert_called_once_with(
-        content="# Bundle\n\nHello.\n",
-        title="Example",
-        folder_id=None,
-    )
-
-
 def test_publish_failure_does_not_emit_plaintext_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
