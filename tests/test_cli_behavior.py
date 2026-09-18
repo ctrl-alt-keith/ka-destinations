@@ -112,6 +112,57 @@ def test_publish_calls_google_api_with_bundle_content(
     assert captured.out.strip() == "https://docs.google.com/document/d/doc-id/edit"
 
 
+def test_publish_uses_explicit_installed_app_oauth_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+    client_file = tmp_path / "client.json"
+    token_file = tmp_path / "token.json"
+    publish = Mock(return_value="https://docs.google.com/document/d/doc-id/edit")
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(
+        [
+            "publish",
+            str(bundle),
+            "--title",
+            "Example",
+            "--oauth-client-file",
+            str(client_file),
+            "--oauth-token-file",
+            str(token_file),
+        ]
+    )
+
+    assert result == 0
+    publish.assert_called_once_with(
+        content="# Bundle\n",
+        title="Example",
+        folder_id=None,
+        oauth_client_file=client_file,
+        oauth_token_file=token_file,
+    )
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize("option", ["--oauth-client-file", "--oauth-token-file"])
+def test_publish_requires_both_installed_app_oauth_files(
+    tmp_path: Path, option: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as error:
+        cli.main(["publish", str(bundle), "--title", "Example", option, "one.json"])
+
+    assert error.value.code == 2
+    assert (
+        "--oauth-client-file and --oauth-token-file must be used together"
+        in capsys.readouterr().err
+    )
+
+
 def test_publish_can_emit_json_receipt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -203,6 +254,26 @@ def test_publish_failure_reports_safe_google_auth_guidance(
     assert synthetic_secret not in captured.err
     assert captured.err == (
         "publish failed: Google authentication failed; check Application Default Credentials\n"
+    )
+
+
+def test_publish_failure_hides_installed_app_oauth_details(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n", encoding="utf-8")
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    publish = Mock(side_effect=gdocs.InstalledAppOAuthError(synthetic_secret))
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert synthetic_secret not in captured.err
+    assert captured.err == (
+        "publish failed: Google installed-app OAuth failed; "
+        "check the OAuth client and token files\n"
     )
 
 

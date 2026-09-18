@@ -88,6 +88,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional Google Drive folder ID for the newly created Google Doc.",
     )
     publish_parser.add_argument(
+        "--oauth-client-file",
+        help=(
+            "Optional Desktop OAuth client JSON file. Requires --oauth-token-file and "
+            "uses installed-app OAuth instead of Application Default Credentials."
+        ),
+    )
+    publish_parser.add_argument(
+        "--oauth-token-file",
+        help=(
+            "Credential file used only with --oauth-client-file. It is created or "
+            "refreshed with owner-only permissions."
+        ),
+    )
+    publish_parser.add_argument(
         "--output-format",
         choices=("text", "json"),
         default="text",
@@ -104,6 +118,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "publish":
         args.title = _non_empty_value(parser, label="--title", value=args.title)
         args.folder_id = _non_empty_value(parser, label="--folder-id", value=args.folder_id)
+        if bool(args.oauth_client_file) != bool(args.oauth_token_file):
+            parser.error("--oauth-client-file and --oauth-token-file must be used together")
         bundle_path = Path(args.bundle)
         try:
             content = _read_utf8_text(bundle_path)
@@ -142,11 +158,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         try:
-            url = gdocs.publish_markdown(
-                content=content,
-                title=args.title,
-                folder_id=args.folder_id,
-            )
+            if args.oauth_client_file:
+                url = gdocs.publish_markdown(
+                    content=content,
+                    title=args.title,
+                    folder_id=args.folder_id,
+                    oauth_client_file=Path(args.oauth_client_file),
+                    oauth_token_file=Path(args.oauth_token_file),
+                )
+            else:
+                url = gdocs.publish_markdown(
+                    content=content,
+                    title=args.title,
+                    folder_id=args.folder_id,
+                )
         except Exception as exc:
             print(f"publish failed: {gdocs.publish_failure_message(exc)}", file=sys.stderr)
             return 1
