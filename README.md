@@ -71,9 +71,9 @@ contract.
 
 ## Google Auth
 
-`ka-destinations` uses Google Application Default Credentials through
-`google.auth.default()`. Configure credentials outside the tool; do not put
-secrets in this repository.
+By default, `ka-destinations` uses Google Application Default Credentials
+through `google.auth.default()`. Configure credentials outside the tool; do
+not put secrets in this repository.
 
 Common setup options:
 
@@ -86,6 +86,29 @@ The publish flow requests the Google Docs scope:
 
 When `--folder-id` is used, it also requests the Google Drive file scope:
 `https://www.googleapis.com/auth/drive.file`.
+
+### Installed-app OAuth for a Google user
+
+If ADC cannot obtain the needed user consent, use an OAuth **Desktop** client
+JSON downloaded from your Google Cloud project. This is client configuration,
+not ADC: do not set `GOOGLE_APPLICATION_CREDENTIALS` to it.
+
+Pass both paths explicitly on a live publish:
+
+```bash
+ka-destinations publish bundle.md --title "Example" \
+  --oauth-client-file /secure/path/client.json \
+  --oauth-token-file /secure/path/ka-destinations-token.json
+```
+
+The first run opens the normal browser consent flow using that client. Later
+runs reuse the refresh token in the caller-selected token file. The tool writes
+or refreshes that file atomically with owner-only permissions; keep both files
+outside the repository and do not print, commit, or share them. The client and
+token options must be used together. With `--folder-id`, the same flow requests
+the additional Drive file scope; otherwise it requests only the Docs scope.
+If a saved token does not record every scope needed for the current command,
+the tool runs consent again rather than using it.
 
 ## Scope Limits
 

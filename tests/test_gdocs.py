@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import importlib
 import sys
+from pathlib import Path
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -453,6 +456,123 @@ def test_build_google_credentials_adds_drive_scope_when_needed(
     assert captured_scopes == [
         [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE]
     ]
+
+
+@pytest.mark.parametrize(
+    ("include_drive", "expected_scopes"),
+    [
+        (False, [gdocs.GOOGLE_DOCS_SCOPE]),
+        (True, [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE]),
+    ],
+)
+def test_build_google_credentials_selects_installed_app_oauth_and_scopes(
+    monkeypatch: pytest.MonkeyPatch, include_drive: bool, expected_scopes: list[str]
+) -> None:
+    credentials = object()
+    build_installed = Mock(return_value=credentials)
+    monkeypatch.setattr(gdocs, "_build_installed_app_oauth_credentials", build_installed)
+    client_file = Path("client.json")
+    token_file = Path("token.json")
+
+    result = gdocs._build_google_credentials(
+        include_drive=include_drive,
+        oauth_client_file=client_file,
+        oauth_token_file=token_file,
+    )
+
+    assert result is credentials
+    build_installed.assert_called_once_with(
+        client_file=client_file,
+        token_file=token_file,
+        scopes=expected_scopes,
+    )
+
+
+def test_installed_app_oauth_starts_local_server_with_requested_scopes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    installed_app_flow = cast(Any, importlib.import_module("google_auth_oauthlib.flow"))
+    InstalledAppFlow = installed_app_flow.InstalledAppFlow
+
+    credentials = Mock()
+    flow = Mock()
+    flow.run_local_server.return_value = credentials
+    create_flow = Mock(return_value=flow)
+    persist = Mock()
+    monkeypatch.setattr(InstalledAppFlow, "from_client_secrets_file", create_flow)
+    monkeypatch.setattr(gdocs, "_persist_oauth_token", persist)
+    scopes = [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE]
+    client_file = Path("client.json")
+    token_file = Path("token.json")
+
+    result = gdocs._build_installed_app_oauth_credentials(
+        client_file=client_file,
+        token_file=token_file,
+        scopes=scopes,
+    )
+
+    assert result is credentials
+    create_flow.assert_called_once_with(str(client_file), scopes=scopes)
+    flow.run_local_server.assert_called_once_with(
+        port=0,
+        access_type="offline",
+        prompt="consent",
+    )
+    persist.assert_called_once_with(token_file, credentials)
+
+
+def test_installed_app_oauth_failure_hides_provider_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    installed_app_flow = cast(Any, importlib.import_module("google_auth_oauthlib.flow"))
+    InstalledAppFlow = installed_app_flow.InstalledAppFlow
+
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    create_flow = Mock(side_effect=RuntimeError(synthetic_secret))
+    monkeypatch.setattr(InstalledAppFlow, "from_client_secrets_file", create_flow)
+
+    with pytest.raises(gdocs.InstalledAppOAuthError) as error:
+        gdocs._build_installed_app_oauth_credentials(
+            client_file=Path("client.json"),
+            token_file=Path("token.json"),
+            scopes=[gdocs.GOOGLE_DOCS_SCOPE],
+        )
+
+    assert synthetic_secret not in str(error.value)
+
+
+def test_persist_oauth_token_is_private(tmp_path: Path) -> None:
+    token_file = tmp_path / "token.json"
+    credentials = Mock()
+    credentials.to_json.return_value = '{"refresh_token": "synthetic"}'
+
+    gdocs._persist_oauth_token(token_file, credentials)
+
+    assert token_file.read_text(encoding="utf-8") == '{"refresh_token": "synthetic"}'
+    assert token_file.stat().st_mode & 0o777 == 0o600
+
+
+def test_prepare_oauth_token_file_rejects_symlink(tmp_path: Path) -> None:
+    target = tmp_path / "target.json"
+    target.write_text("{}", encoding="utf-8")
+    token_file = tmp_path / "token.json"
+    token_file.symlink_to(target)
+
+    with pytest.raises(ValueError, match="private regular file"):
+        gdocs._prepare_oauth_token_file(token_file)
+
+
+def test_stored_oauth_token_requires_every_requested_scope(tmp_path: Path) -> None:
+    token_file = tmp_path / "token.json"
+    token_file.write_text(
+        '{"scopes": ["https://www.googleapis.com/auth/documents"]}', encoding="utf-8"
+    )
+
+    assert gdocs._stored_oauth_token_has_scopes(token_file, [gdocs.GOOGLE_DOCS_SCOPE])
+    assert not gdocs._stored_oauth_token_has_scopes(
+        token_file,
+        [gdocs.GOOGLE_DOCS_SCOPE, gdocs.GOOGLE_DRIVE_FILE_SCOPE],
+    )
 
 
 def test_build_google_credentials_reports_missing_google_auth(

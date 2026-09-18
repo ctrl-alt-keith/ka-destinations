@@ -55,6 +55,8 @@ def test_publish_help_lists_required_args() -> None:
     assert "--title" in result.stdout
     assert "--dry-run" in result.stdout
     assert "--folder-id" in result.stdout
+    assert "--oauth-client-file" in result.stdout
+    assert "--oauth-token-file" in result.stdout
     assert "--output-format" in result.stdout
 
 
