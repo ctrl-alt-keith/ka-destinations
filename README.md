@@ -60,8 +60,9 @@ operation; it is not publication authorization, editorial approval, or proof
 that the caller-supplied artifact should be retained.
 
 If a live publish fails, the CLI reports a secret-safe diagnostic on stderr,
-including safe Google authentication or HTTP status context when available. It
-returns exit code 1 and does not emit a publication receipt.
+including safe Google authentication, HTTP status, or allowlisted 403
+classification context when available. It returns exit code 1 and does not emit
+a publication receipt.
 
 Before creating a Google Doc, the publisher rejects control characters and
 BMP private-use characters that Google Docs would silently remove. These
