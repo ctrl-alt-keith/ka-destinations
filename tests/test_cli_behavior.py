@@ -7,6 +7,8 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from google.auth.exceptions import DefaultCredentialsError
+from googleapiclient.errors import HttpError  # type: ignore[import-untyped]
 
 from ka_destinations import cli, gdocs
 
@@ -147,7 +149,7 @@ def test_publish_can_emit_json_receipt(
     }
 
 
-def test_publish_failure_does_not_echo_api_error_details(
+def test_publish_failure_uses_generic_message_for_unknown_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     bundle = tmp_path / "bundle.md"
@@ -183,6 +185,47 @@ def test_publish_failure_does_not_echo_synthetic_secret(
     assert result == 1
     assert synthetic_secret not in captured.err
     assert captured.err == "publish failed: Google Docs API request was unsuccessful\n"
+
+
+def test_publish_failure_reports_safe_google_auth_guidance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    publish = Mock(side_effect=DefaultCredentialsError(synthetic_secret))  # type: ignore[no-untyped-call]
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert synthetic_secret not in captured.err
+    assert captured.err == (
+        "publish failed: Google authentication failed; check Application Default Credentials\n"
+    )
+
+
+def test_publish_failure_reports_safe_google_api_status(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    response = Mock()
+    response.status = 403
+    publish = Mock(side_effect=HttpError(response, synthetic_secret.encode()))
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert synthetic_secret not in captured.err
+    assert captured.err == (
+        "publish failed: Google API request was forbidden (HTTP 403); "
+        "check Google Docs or Drive access\n"
+    )
 
 
 def test_publish_reports_input_read_error(
