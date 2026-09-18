@@ -1,16 +1,29 @@
 # ka-destinations
 
-Minimal destination-layer CLI tools that currently implement
-destination-specific publishing behavior for the Publication Product
-Candidate.
+Historical destination-layer CLI tools for Google Docs publication behavior.
 
 Publication owns the authorized external-delivery transaction and
 publication-receipt semantics. An authorized publication authorizer supplies
 the consequential authorization. The CLI and destination drivers perform the
-runtime work, and this repository currently implements that behavior and emits
-the resulting receipts.
+runtime work, and publication still requires an explicit operator action.
 
-## Install
+## Migration status
+
+CAK-325 moves the maintained operator workflow into
+[`knowledge-adapters`](https://github.com/ctrl-alt-keith/knowledge-adapters).
+Use its explicit configured publication action after the linked integration PR
+is merged:
+
+```bash
+knowledge-adapters publish --config runs.yaml --publish review-pack-doc
+```
+
+The configuration may live beside acquisition runs and bundles, but those
+commands do not publish. This repository remains available during review and
+the migration window; this PR does not remove code, alter existing CLI behavior,
+or authorize any publication.
+
+## Legacy install
 
 ```bash
 pipx install git+https://github.com/ctrl-alt-keith/ka-destinations.git@main
@@ -25,7 +38,7 @@ pip install -e .[dev]
 make check
 ```
 
-## Usage
+## Legacy usage
 
 Publish a caller-supplied local bundle markdown file into a new Google Doc:
 
@@ -114,8 +127,9 @@ the tool runs consent again rather than using it.
 
 The Source Acquisition Product Candidate owns acquisition semantics, and
 `knowledge-adapters` currently implements acquisition and normalization.
-Publication owns the authorized external-delivery transaction, while
-`ka-destinations` currently implements the destination-specific publish step.
+Publication owns the authorized external-delivery transaction. CAK-325 migrates
+this repository's implementation into `knowledge-adapters`; repository moves do
+not move Publication authority.
 
 The caller supplies the artifact to publish and is responsible for selecting
 the exact artifact covered by the publication authorization. This repository

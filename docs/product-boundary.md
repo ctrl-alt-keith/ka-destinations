@@ -3,10 +3,12 @@
 The Publication Product Candidate owns the authorized external-delivery
 transaction and publication-receipt semantics.
 
-`ka-destinations` currently implements the destination-specific publication
-behavior for that boundary. It takes a caller-supplied artifact and, under
-authorization supplied by an authorized publication authorizer, publishes the
-artifact into a downstream destination.
+`ka-destinations` historically implements the destination-specific publication
+behavior for that boundary. CAK-325 migrates the implementation to
+`knowledge-adapters` while preserving the same explicit authorization boundary.
+This repository remains a migration reference until the integrated path is
+reviewed and merged; it must not be removed or made to proxy to another CLI by
+this documentation-only change.
 
 The repository implementation question is:
 
@@ -33,7 +35,17 @@ authorizer, not the Product Candidate, repository, CLI, validator, or
 destination driver, supplies the consequential authorization for a specific
 external delivery.
 
-## Current Repository Implementation
+## Migration state
+
+The integrated implementation is reviewable separately in
+`knowledge-adapters`. This repository has not been retired by this change:
+
+- existing source and CLI behavior remain intact;
+- no permanent subprocess bridge is introduced; and
+- operators should adopt the explicit `knowledge-adapters publish` workflow
+  only after its integration PR is merged.
+
+## Historical Repository Implementation
 
 `ka-destinations` currently:
 
