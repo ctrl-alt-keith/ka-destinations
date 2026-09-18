@@ -147,7 +147,7 @@ def test_publish_can_emit_json_receipt(
     }
 
 
-def test_publish_failure_does_not_emit_plaintext_output(
+def test_publish_failure_does_not_echo_api_error_details(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     bundle = tmp_path / "bundle.md"
@@ -160,12 +160,29 @@ def test_publish_failure_does_not_emit_plaintext_output(
     captured = capsys.readouterr()
     assert result == 1
     assert captured.out == ""
-    assert captured.err == "publish failed: destination unavailable\n"
+    assert captured.err == "publish failed: Google Docs API request was unsuccessful\n"
     publish.assert_called_once_with(
         content="# Bundle\n\nHello.\n",
         title="Example",
         folder_id=None,
     )
+
+
+def test_publish_failure_does_not_echo_synthetic_secret(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    publish = Mock(side_effect=RuntimeError(f"File {synthetic_secret} was not found."))
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert synthetic_secret not in captured.err
+    assert captured.err == "publish failed: Google Docs API request was unsuccessful\n"
 
 
 def test_publish_reports_input_read_error(
