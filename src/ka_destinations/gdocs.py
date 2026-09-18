@@ -10,6 +10,37 @@ GOOGLE_DOCS_SCOPE = "https://www.googleapis.com/auth/documents"
 GOOGLE_DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
 
+def publish_failure_message(error: BaseException) -> str:
+    """Return an operator-safe summary for a failed Google publish."""
+    error_type = type(error)
+    if (
+        error_type.__module__ == "google.auth.exceptions"
+        and error_type.__name__
+        in {"DefaultCredentialsError", "RefreshError", "UserAccessTokenError"}
+    ):
+        return "Google authentication failed; check Application Default Credentials"
+
+    if not (
+        error_type.__module__ == "googleapiclient.errors" and error_type.__name__ == "HttpError"
+    ):
+        return "Google Docs API request was unsuccessful"
+
+    status = getattr(getattr(error, "resp", None), "status", None)
+    if not isinstance(status, int):
+        return "Google API request failed"
+    if status == 401:
+        return "Google API authentication failed (HTTP 401); check Application Default Credentials"
+    if status == 403:
+        return "Google API request was forbidden (HTTP 403); check Google Docs or Drive access"
+    if status == 404:
+        return "Google API resource was not found (HTTP 404); check the configured resource ID"
+    if status == 429:
+        return "Google API rate limit reached (HTTP 429); retry later"
+    if 500 <= status <= 599:
+        return f"Google API service failed (HTTP {status}); retry later"
+    return f"Google API request failed (HTTP {status}); check the publish configuration"
+
+
 def _validate_insertable_content(content: str) -> None:
     """Reject characters the Docs API would silently remove from published text."""
     for character in content:

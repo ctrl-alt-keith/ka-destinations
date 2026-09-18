@@ -147,8 +147,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 title=args.title,
                 folder_id=args.folder_id,
             )
-        except Exception:
-            print("publish failed: Google Docs API request was unsuccessful", file=sys.stderr)
+        except Exception as exc:
+            print(f"publish failed: {gdocs.publish_failure_message(exc)}", file=sys.stderr)
             return 1
         if args.output_format == "json":
             _print_json_receipt(
