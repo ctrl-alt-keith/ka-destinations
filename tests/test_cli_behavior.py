@@ -206,15 +206,42 @@ def test_publish_failure_reports_safe_google_auth_guidance(
     )
 
 
-def test_publish_failure_reports_safe_google_api_status(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+@pytest.mark.parametrize(
+    ("reason", "expected_reason"),
+    [
+        ("insufficientPermissions", "insufficientPermissions"),
+        ("accessNotConfigured", "accessNotConfigured"),
+    ],
+)
+def test_publish_failure_reports_safe_google_403_reason(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    reason: str,
+    expected_reason: str,
 ) -> None:
     bundle = tmp_path / "bundle.md"
     bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
     synthetic_secret = "synthetic-google-api-token-for-test"
+    arbitrary_response_content = "arbitrary-provider-response-content"
     response = Mock()
     response.status = 403
-    publish = Mock(side_effect=HttpError(response, synthetic_secret.encode()))
+    content = json.dumps(
+        {
+            "error": {
+                "status": "PERMISSION_DENIED",
+                "message": synthetic_secret,
+                "errors": [
+                    {
+                        "reason": reason,
+                        "message": arbitrary_response_content,
+                        "resource": "sensitive-resource-id",
+                    }
+                ],
+            }
+        }
+    ).encode()
+    publish = Mock(side_effect=HttpError(response, content))
     monkeypatch.setattr(gdocs, "publish_markdown", publish)
 
     result = cli.main(["publish", str(bundle), "--title", "Example"])
@@ -222,6 +249,51 @@ def test_publish_failure_reports_safe_google_api_status(
     captured = capsys.readouterr()
     assert result == 1
     assert synthetic_secret not in captured.err
+    assert arbitrary_response_content not in captured.err
+    assert "sensitive-resource-id" not in captured.err
+    assert captured.err == (
+        "publish failed: Google API request was forbidden "
+        f"(HTTP 403, status PERMISSION_DENIED, reason {expected_reason}); "
+        "check Google Docs or Drive access\n"
+    )
+
+
+def test_publish_failure_ignores_untrusted_google_403_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bundle = tmp_path / "bundle.md"
+    bundle.write_text("# Bundle\n\nHello.\n", encoding="utf-8")
+    synthetic_secret = "synthetic-google-api-token-for-test"
+    arbitrary_response_content = "arbitrary-provider-response-content"
+    response = Mock()
+    response.status = 403
+    content = json.dumps(
+        {
+            "error": {
+                "status": "UNTRUSTED_PROVIDER_STATUS",
+                "message": synthetic_secret,
+                "errors": [
+                    {
+                        "reason": "untrustedProviderReason",
+                        "message": arbitrary_response_content,
+                        "resource": "sensitive-resource-id",
+                    }
+                ],
+            }
+        }
+    ).encode()
+    publish = Mock(side_effect=HttpError(response, content))
+    monkeypatch.setattr(gdocs, "publish_markdown", publish)
+
+    result = cli.main(["publish", str(bundle), "--title", "Example"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert synthetic_secret not in captured.err
+    assert arbitrary_response_content not in captured.err
+    assert "sensitive-resource-id" not in captured.err
+    assert "UNTRUSTED_PROVIDER_STATUS" not in captured.err
+    assert "untrustedProviderReason" not in captured.err
     assert captured.err == (
         "publish failed: Google API request was forbidden (HTTP 403); "
         "check Google Docs or Drive access\n"

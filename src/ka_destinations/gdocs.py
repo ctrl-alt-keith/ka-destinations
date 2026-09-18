@@ -2,12 +2,27 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 GOOGLE_DOC_MIME_TYPE = "application/vnd.google-apps.document"
 GOOGLE_DOCS_URL_TEMPLATE = "https://docs.google.com/document/d/{document_id}/edit"
 GOOGLE_DOCS_SCOPE = "https://www.googleapis.com/auth/documents"
 GOOGLE_DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+_MAX_GOOGLE_ERROR_CONTENT_BYTES = 8192
+_SAFE_GOOGLE_403_STATUSES = frozenset({"PERMISSION_DENIED"})
+_SAFE_GOOGLE_403_REASONS = frozenset(
+    {
+        "accessNotConfigured",
+        "dailyLimitExceeded",
+        "forbidden",
+        "insufficientPermissions",
+        "quotaExceeded",
+        "rateLimitExceeded",
+        "serviceDisabled",
+        "userRateLimitExceeded",
+    }
+)
 
 
 def publish_failure_message(error: BaseException) -> str:
@@ -31,7 +46,11 @@ def publish_failure_message(error: BaseException) -> str:
     if status == 401:
         return "Google API authentication failed (HTTP 401); check Application Default Credentials"
     if status == 403:
-        return "Google API request was forbidden (HTTP 403); check Google Docs or Drive access"
+        details = _safe_google_403_details(error)
+        return (
+            "Google API request was forbidden (HTTP 403"
+            f"{details}); check Google Docs or Drive access"
+        )
     if status == 404:
         return "Google API resource was not found (HTTP 404); check the configured resource ID"
     if status == 429:
@@ -39,6 +58,41 @@ def publish_failure_message(error: BaseException) -> str:
     if 500 <= status <= 599:
         return f"Google API service failed (HTTP {status}); retry later"
     return f"Google API request failed (HTTP {status}); check the publish configuration"
+
+
+def _safe_google_403_details(error: BaseException) -> str:
+    """Return allowlisted structured 403 fields without exposing provider content."""
+    content = getattr(error, "content", None)
+    if not isinstance(content, bytes) or len(content) > _MAX_GOOGLE_ERROR_CONTENT_BYTES:
+        return ""
+
+    try:
+        payload = json.loads(content.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return ""
+
+    if not isinstance(payload, dict):
+        return ""
+    provider_error = payload.get("error")
+    if not isinstance(provider_error, dict):
+        return ""
+
+    details: list[str] = []
+    provider_status = provider_error.get("status")
+    if provider_status in _SAFE_GOOGLE_403_STATUSES:
+        details.append(f"status {provider_status}")
+
+    errors = provider_error.get("errors")
+    if isinstance(errors, list):
+        for item in errors:
+            if not isinstance(item, dict):
+                continue
+            reason = item.get("reason")
+            if reason in _SAFE_GOOGLE_403_REASONS:
+                details.append(f"reason {reason}")
+                break
+
+    return f", {', '.join(details)}" if details else ""
 
 
 def _validate_insertable_content(content: str) -> None:
